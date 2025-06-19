@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Location Inventory Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .location-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background: #ecf0f1;
+            border: none;
+            margin-right: 5px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .tab:hover:not(.active) {
+            background: #bdc3c7;
+        }
+        .location-content {
+            display: none;
+        }
+        .location-content.active {
+            display: block;
+        }
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .overview-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .overview-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .vendor-section {
+            margin-bottom: 40px;
+        }
+        .vendor-section h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .delivery-schedule {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .person-tag {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .issue-alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .schedule-day {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .schedule-day h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .delivery-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stock-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .stock-low { background: #ff6b6b; color: white; }
+        .stock-medium { background: #feca57; color: #2c3e50; }
+        .stock-good { background: #48dbfb; color: #2c3e50; }
+        .stock-unknown { background: #ddd; color: #666; }
+        .master-table {
+            font-size: 0.9em;
+        }
+        .master-table th {
+            font-size: 0.8em;
+            padding: 8px;
+        }
+        .master-table td {
+            padding: 8px;
+        }
+        .editable {
+            background: #fff3cd;
+            cursor: pointer;
+            border: 1px dashed #ffc107;
+        }
+        .vendor-count {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi-Location Inventory Management System</h1>
+        
+        <div class="summary-stats">
+            <div class="stat-card">
+                <span class="stat-number">4</span>
+                <span>Locations</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">15+</span>
+                <span>Vendors</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">7</span>
+                <span>Key Staff</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">5</span>
+                <span>Delivery Days</span>
+            </div>
+        </div>
+
+        <div class="location-tabs">
+            <button class="tab active" onclick="showLocation('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="showLocation('master-schedule')">📅 Master Schedule</button>
+            <button class="tab" onclick="showLocation('ddi')">DDI - Donut Drive-In</button>
+            <button class="tab" onclick="showLocation('drive-up')">Drive-Up</button>
+            <button class="tab" onclick="showLocation('epiphany')">Epiphany</button>
+            <button class="tab" onclick="showLocation('improv')">Improv Shop</button>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="location-content active">
+            <h2>📊 Executive Dashboard</h2>
+            
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <h3>Vendor Distribution by Location</h3>
+                    <canvas id="vendorChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Weekly Delivery Schedule</h3>
+                    <canvas id="scheduleChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-container">
+                    <h3>Key Personnel Workload</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Person</th><th>Locations</th><th>Primary Role</th><th>Vendor Count</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><span class="person-tag">Max</span></td><td>Improv Shop</td><td>All Operations</td><td><span class="vendor-count">8</span></td></tr>
+                            <tr><td><span class="person-tag">Ariana</span></td><td>DDI</td><td>Primary Orderer</td><td><span class="vendor-count">5</span></td></tr>
+                            <tr><td><span class="person-tag">Erin</span></td><td>Drive-Up, Epiphany</td><td>Primary Orderer</td><td><span class="vendor-count">12</span></td></tr>
+                            <tr><td><span class="person-tag">Cheri</span></td><td>DDI</td><td>Backup/Coordination</td><td><span class="vendor-count">3</span></td></tr>
+                            <tr><td><span class="person-tag">Clayton</span></td><td>Drive-Up, Epiphany</td><td>Inventory/Receiving</td><td><span class="vendor-count">2</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="chart-container">
+                    <h3>Delivery Day Distribution</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <div style="text-align: center; padding: 10px; background: #e8f5e8; border-radius: 5px;">
+                            <strong>Monday</strong><br>
+                            <span style="font-size: 1.5em; color: #27ae60;">3</span><br>
+                            <small>Deliveries</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                            <strong>Tuesday</strong><br>
+                            <span style="font-size: 1.5em; color: #2196f3;">4</span><br>
+                            <small>Deliveries</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 5px;">
+                            <strong>Wednesday</strong><br>
+                            <span style="font-size: 1.5em; color: #ff9800;">3</span><br>
+                            <small>Deliveries</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #fce4ec; border-radius: 5px;">
+                            <strong>Thursday</strong><br>
+                            <span style="font-size: 1.5em; color: #e91e63;">7</span><br>
+                            <small>Deliveries</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #f3e5f5; border-radius: 5px;">
+                            <strong>Friday</strong><br>
+                            <span style="font-size: 1.5em; color: #9c27b0;">2</span><br>
+                            <small>Deliveries</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🚨 Risk Assessment & Recommendations</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                    <div class="issue-alert">
+                        <h4>High Risk - Single Point of Failure</h4>
+                        <p><strong>Erin</strong> manages ordering for both Drive-Up and Epiphany (12 vendors)</p>
+                        <p><em>Recommendation: Cross-train backup orderer</em></p>
+                    </div>
+                    <div class="issue-alert">
+                        <h4>Thursday Delivery Overload</h4>
+                        <p><strong>7 deliveries</strong> scheduled for Thursdays across locations</p>
+                        <p><em>Recommendation: Negotiate delivery day shifts with flexible vendors</em></p>
+                    </div>
+                    <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px;">
+                        <h4>✅ Well-Managed Systems</h4>
+                        <p><strong>Improv Shop:</strong> Max has streamlined single-person management</p>
+                        <p><strong>DDI:</strong> Good backup systems and emergency stock procedures</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Schedule Content -->
+        <div id="master-schedule" class="location-content">
+            <h2>📅 Master Delivery Schedule</h2>
+            
+            <div class="schedule-day">
+                <h4>Monday Deliveries</h4>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> Bono (Flour & Icing) → Oto
+                        <br><small>Ariana orders | Sometimes pickup required</small>
+                    </div>
+                    <span class="stock-status stock-good">GOOD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> Prairie Farms (Milk) → Nova & Andrew
+                        <br><small>Ariana orders | Backup stock maintained</small>
+                    </div>
+                    <span class="stock-status stock-good">GOOD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> Restaurant Depot → Max
+                        <br><small>Through Melanie | Full supply run</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+            </div>
+
+            <div class="schedule-day">
+                <h4>Tuesday Deliveries</h4>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> Craft Republic (Kegs, Craft Beer) → Max
+                        <br><small>Regular delivery schedule</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> LOHR (Domestic Beer) → Max
+                        <br><small>Consistent schedule</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> Southern Glazers (Liquor) → Max
+                        <br><small>Recently switched to delivery</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+            </div>
+
+            <div class="schedule-day">
+                <h4>Wednesday Deliveries</h4>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> Imperial Dade (Boxes) → Ariana
+                        <br><small>Monthly ordering, $350 minimum</small>
+                    </div>
+                    <span class="stock-status stock-medium">MONITOR</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Drive-Up:</strong> PFG (if pickup) → Erin/Caleb
+                        <br><small>Alternative to Thursday delivery</small>
+                    </div>
+                    <span class="stock-status stock-medium">VARIABLE</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> Pepsi → Max
+                        <br><small>Bi-monthly delivery</small>
+                    </div>
+                    <span class="stock-status stock-good">SCHEDULED</span>
+                </div>
+            </div>
+
+            <div class="schedule-day">
+                <h4>Thursday Deliveries - ⚠️ PEAK DAY</h4>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> Imperial Dade (Paper) → Ariana
+                        <br><small>Coordinate with Bob for $350 minimum</small>
+                    </div>
+                    <span class="stock-status stock-medium">COORDINATE</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> Prairie Farms (Milk) → Nova & Andrew
+                        <br><small>Second weekly delivery</small>
+                    </div>
+                    <span class="stock-status stock-good">GOOD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> M&L (Shortening & Juice) → Jackson
+                        <br><small>Maintain 18-20 boxes shortening</small>
+                    </div>
+                    <span class="stock-status stock-good">TRACKED</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>DDI:</strong> Thomas Coffee → Drew
+                        <br><small>6 bags weekly, 15 decaf packs stock</small>
+                    </div>
+                    <span class="stock-status stock-good">MANAGED</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Drive-Up:</strong> PFG (via EL) → Erin/Caleb
+                        <br><small>Piggyback on EL delivery</small>
+                    </div>
+                    <span class="stock-status stock-medium">COORDINATE</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Epiphany:</strong> PFG → Erin/Clay
+                        <br><small>If meeting minimums</small>
+                    </div>
+                    <span class="stock-status stock-low">MIN RISK</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> Breakthru Beverage → Max
+                        <br><small>Beer, liquor, wine</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> CINTAS → Max
+                        <br><small>Cleaning supplies, linens</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Epiphany:</strong> Lohr → Erin/Clay
+                        <br><small>Regular beer delivery</small>
+                    </div>
+                    <span class="stock-status stock-unknown">TBD</span>
+                </div>
+            </div>
+
+            <div class="schedule-day">
+                <h4>Friday Deliveries</h4>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Drive-Up:</strong> PFG (if pickup) → Erin/Caleb
+                        <br><small>Alternative pickup day</small>
+                    </div>
+                    <span class="stock-status stock-medium">FLEXIBLE</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Improv Shop:</strong> Keg 1 → Max
+                        <br><small>1-2 times per month</small>
+                    </div>
+                    <span class="stock-status stock-good">SCHEDULED</span>
+                </div>
+                <div class="delivery-item">
+                    <div>
+                        <strong>Epiphany:</strong> Southern Glazer's → Erin/Clay
+                        <br><small>Alternative liquor delivery day</small>
+                    </div>
+                    <span class="stock-status stock-medium">FLEXIBLE</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px;">
+                <h3>📋 Master Schedule Recommendations</h3>
+                <ul>
+                    <li><strong>Thursday Overload:</strong> 9 deliveries scheduled - consider shifting flexible vendors to other days</li>
+                    <li><strong>Minimum Order Coordination:</strong> PFG orders often don't meet minimums - coordinate between Drive-Up and Epiphany</li>
+                    <li><strong>Backup Coverage:</strong> Train additional staff for Thursday reception duties</li>
+                    <li><strong>Vendor Negotiation:</strong> Ask Southern Glazer's, Craft Republic, and LOHR about flexible delivery days</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="ddi" class="location-content">
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <h3>Key Personnel</h3>
+                    <p><strong>Primary Orderer:</strong> <span class="person-tag">Ariana</span></p>
+                    <p><strong>Backup:</strong> <span class="person-tag">Cheri</span></p>
+                    <p><strong>Receivers:</strong> Nova, Andrew, Oto, Jackson, Drew</p>
+                </div>
+                <div class="overview-card">
+                    <h3>Delivery Schedule</h3>
+                    <p><strong>Monday:</strong> Bono, Prairie Farms</p>
+                    <p><strong>Wednesday:</strong> Boxes</p>
+                    <p><strong>Thursday:</strong> Paper, Prairie Farms, M&L, Thomas Coffee</p>
+                </div>
+            </div>
+
+            <div class="vendor-section">
+                <h3>Complete Inventory Management Table</h3>
+                <table class="master-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Vendor</th>
+                            <th>Orderer</th>
+                            <th>Receiver</th>
+                            <th>Delivery Day</th>
+                            <th>Current Stock</th>
+                            <th>Reorder Point</th>
+                            <th>Last Order</th>
+                            <th>Next Order Due</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Milk</td>
+                            <td>Prairie Farms</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Nova & Andrew</span></td>
+                            <td>Mon/Thu</td>
+                            <td class="editable" onclick="editCell(this)">Click to update</td>
+                            <td class="editable" onclick="editCell(this)">Set minimum</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Auto-calc</td>
+                            <td><span class="stock-status stock-good">GOOD</span></td>
+                        </tr>
+                        <tr>
+                            <td>Flour</td>
+                            <td>Bono</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Oto</span></td>
+                            <td>Monday</td>
+                            <td class="editable" onclick="editCell(this)">Click to update</td>
+                            <td class="editable" onclick="editCell(this)">6 bags + backup</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Weekly</td>
+                            <td><span class="stock-status stock-good">GOOD</span></td>
+                        </tr>
+                        <tr>
+                            <td>Icing</td>
+                            <td>Bono</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Oto</span></td>
+                            <td>Monday</td>
+                            <td class="editable" onclick="editCell(this)">Click to update</td>
+                            <td class="editable" onclick="editCell(this)">Set minimum</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Weekly</td>
+                            <td><span class="stock-status stock-good">GOOD</span></td>
+                        </tr>
+                        <tr>
+                            <td>Shortening</td>
+                            <td>M&L</td>
+                            <td><span class="person-tag">Cheri/Ariana</span></td>
+                            <td><span class="person-tag">Jackson</span></td>
+                            <td>Thursday</td>
+                            <td class="editable" onclick="editCell(this)">18-20 boxes</td>
+                            <td class="editable" onclick="editCell(this)">18 boxes</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Auto-calc</td>
+                            <td><span class="stock-status stock-good">TRACKED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Orange Juice</td>
+                            <td>M&L</td>
+                            <td><span class="person-tag">Cheri/Ariana</span></td>
+                            <td><span class="person-tag">Jackson</span></td>
+                            <td>Thursday</td>
+                            <td class="editable" onclick="editCell(this)">2 containers</td>
+                            <td class="editable" onclick="editCell(this)">2 containers</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Auto-calc</td>
+                            <td><span class="stock-status stock-good">TRACKED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Apple Juice</td>
+                            <td>M&L</td>
+                            <td><span class="person-tag">Cheri/Ariana</span></td>
+                            <td><span class="person-tag">Jackson</span></td>
+                            <td>Thursday</td>
+                            <td class="editable" onclick="editCell(this)">2 containers</td>
+                            <td class="editable" onclick="editCell(this)">2 containers</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Auto-calc</td>
+                            <td><span class="stock-status stock-good">TRACKED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Coffee (Regular)</td>
+                            <td>Thomas Coffee</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Drew</span></td>
+                            <td>Thursday</td>
+                            <td class="editable" onclick="editCell(this)">6 bags weekly</td>
+                            <td class="editable" onclick="editCell(this)">3 bags</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Weekly</td>
+                            <td><span class="stock-status stock-good">MANAGED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Coffee (Decaf)</td>
+                            <td>Thomas Coffee</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Drew</span></td>
+                            <td>Thursday</td>
+                            <td class="editable" onclick="editCell(this)">15 packs target</td>
+                            <td class="editable" onclick="editCell(this)">10 packs</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">As needed</td>
+                            <td><span class="stock-status stock-good">MANAGED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Paper Supplies</td>
+                            <td>Imperial Dade</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td>Thursday</td>
+                            <td class="editable" onclick="editCell(this)">Click to update</td>
+                            <td class="editable" onclick="editCell(this)">$350 minimum</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">Monthly</td>
+                            <td><span class="stock-status stock-medium">COORDINATE</span></td>
+                        </tr>
+                        <tr>
+                            <td>Melanie Supplies</td>
+                            <td>Various</td>
+                            <td><span class="person-tag">Cheri→Melanie</span></td>
+                            <td>Various</td>
+                            <td>Various</td>
+                            <td class="editable" onclick="editCell(this)">Click to update</td>
+                            <td class="editable" onclick="editCell(this)">Set minimum</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">As needed</td>
+                            <td><span class="stock-status stock-medium">APPROVAL</span></td>
+                        </tr>
+                        <tr>
+                            <td>Amazon Supplies</td>
+                            <td>Amazon</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td>As needed</td>
+                            <td class="editable" onclick="editCell(this)">Click to update</td>
+                            <td class="editable" onclick="editCell(this)">Set minimum</td>
+                            <td class="editable" onclick="editCell(this)">Enter date</td>
+                            <td class="editable" onclick="editCell(this)">As needed</td>
+                            <td><span class="stock-status stock-medium">AS NEEDED</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="issue-alert">
+                <h4>🚨 Current Issues & Solutions</h4>
+                <p><strong>Past Issue:</strong> Milk shortages - <em>SOLVED with second fridge installation</em></p>
+                <p><strong>Occasional Issue:</strong> Flour shortages during busy periods - <em>Cory maintains 6-bag backup stock at Hampton</em></p>
+            </div>
+        </div></th>
+                            <th>Tracking System</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Milk</td>
+                            <td>Prairie Farms</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Nova & Andrew</span></td>
+                            <td>Mon/Thu</td>
+                            <td>Manual tracking</td>
+                        </tr>
+                        <tr>
+                            <td>Flour & Icing</td>
+                            <td>Bono</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Oto</span></td>
+                            <td>Monday</td>
+                            <td>Daily production spreadsheet (Cheri-Oto)</td>
+                        </tr>
+                        <tr>
+                            <td>Shortening & Juice</td>
+                            <td>M&L</td>
+                            <td><span class="person-tag">Cheri/Ariana</span></td>
+                            <td><span class="person-tag">Jackson</span></td>
+                            <td>Thursday</td>
+                            <td>Count system (18-20 boxes shortening)</td>
+                        </tr>
+                        <tr>
+                            <td>Coffee</td>
+                            <td>Thomas Coffee</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Drew</span></td>
+                            <td>Thursday</td>
+                            <td>Text updates to manager</td>
+                        </tr>
+                        <tr>
+                            <td>Paper Supplies</td>
+                            <td>Imperial Dade</td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td><span class="person-tag">Ariana</span></td>
+                            <td>Thursday</td>
+                            <td>Monthly ordering ($350 minimum)</td>
+                        </tr>
+                        <tr>
+                            <td>Supplies (Melanie)</td>
+                            <td>Various</td>
+                            <td><span class="person-tag">Cheri→Melanie</span></td>
+                            <td>Various</td>
+                            <td>Various</td>
+                            <td>Approval process via Cheri</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="issue-alert">
+                <h4>🚨 Current Issues & Solutions</h4>
+                <p><strong>Past Issue:</strong> Milk shortages - <em>SOLVED with second fridge installation</em></p>
+                <p><strong>Occasional Issue:</strong> Flour shortages during busy periods - <em>Cory maintains 6-bag backup stock at Hampton</em></p>
+            </div>
+        </div>
+
+        <!-- Drive-Up Content -->
+        <div id="drive-up" class="location-content">
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <h3>Key Personnel</h3>
+                    <p><strong>Primary Orderer:</strong> <span class="person-tag">Erin</span></p>
+                    <p><strong>Receivers:</strong> Erin, Caleb</p>
+                    <p><strong>Inventory:</strong> Clayton (Thursday), Caleb (on-demand)</p>
+                </div>
+                <div class="overview-card">
+                    <h3>Tracking System</h3>
+                    <p><strong>Spreadsheet:</strong> <a href="https://docs.google.com/spreadsheets/d/11ELc6mFDDIKZj12_Ir-HcN-BwPhbdibsoGzz7cPqTOs/edit?gid=0#gid=0" target="_blank">Google Sheets</a></p>
+                    <p><strong>Communication:</strong> Text updates from Caleb</p>
+                </div>
+            </div>
+
+            <div class="vendor-section">
+                <h3>Vendor & Inventory Details</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item Category</th>
+                            <th>Vendor</th>
+                            <th>Delivery Method</th>
+                            <th>Schedule</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cups, Lids, Coffee, Syrups</td>
+                            <td>Park Ave</td>
+                            <td>Pickup preferred</td>
+                            <td>As needed</td>
+                            <td>Caleb & Lucy help with pickups</td>
+                        </tr>
+                        <tr>
+                            <td>Napkins, Soft Serve, Bowls</td>
+                            <td>PFG</td>
+                            <td>Pickup Wed/Fri or piggyback EL</td>
+                            <td>Thu (with EL)</td>
+                            <td>Don't meet minimums</td>
+                        </tr>
+                        <tr>
+                            <td>Root Beer</td>
+                            <td>Lohr</td>
+                            <td>Through EL</td>
+                            <td>Minimal orders</td>
+                            <td>Via EL ordering</td>
+                        </tr>
+                        <tr>
+                            <td>Coffee & Retail Milk</td>
+                            <td>Rolling Lawns</td>
+                            <td>Delivery</td>
+                            <td>1-2 days notice</td>
+                            <td>No set schedule</td>
+                        </tr>
+                        <tr>
+                            <td>Specialty Tea</td>
+                            <td>Big Heart Tea</td>
+                            <td>Pickup</td>
+                            <td>Rare orders</td>
+                            <td>Only ordered once</td>
+                        </tr>
+                        <tr>
+                            <td>Miscellaneous</td>
+                            <td>Amazon</td>
+                            <td>Delivery to Caleb/Erin</td>
+                            <td>As needed</td>
+                            <td>One-off needs</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="issue-alert">
+                <h4>🚨 Current Issues</h4>
+                <p><strong>Forgotten Items:</strong> Minimally-used items like whipped cream - requires Schnucks runs</p>
+                <p><strong>Milk Management:</strong> Expiration dates add complexity to inventory tracking</p>
+            </div>
+        </div>
+
+        <!-- Epiphany Content -->
+        <div id="epiphany" class="location-content">
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <h3>Key Personnel</h3>
+                    <p><strong>Primary Orderer:</strong> <span class="person-tag">Erin</span></p>
+                    <p><strong>NA Drinks:</strong> <span class="person-tag">Clayton</span></p>
+                    <p><strong>Receivers:</strong> Erin, Clay</p>
+                </div>
+                <div class="overview-card">
+                    <h3>Tracking System</h3>
+                    <p><strong>Method:</strong> Inventory app</p>
+                    <p><strong>Reporter:</strong> Clayton provides counts</p>
+                </div>
+            </div>
+
+            <div class="vendor-section">
+                <h3>Vendor & Inventory Details</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item Category</th>
+                            <th>Vendor</th>
+                            <th>Delivery Method</th>
+                            <th>Schedule</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Frozen Foods, Supplies</td>
+                            <td>PFG</td>
+                            <td>Pickup or Delivery</td>
+                            <td>Thu (delivery) / Wed-Fri (pickup)</td>
+                            <td>Often don't meet minimums</td>
+                        </tr>
+                        <tr>
+                            <td>Pizzas</td>
+                            <td>The Christy</td>
+                            <td>Pickup</td>
+                            <td>As needed</td>
+                            <td>On-demand ordering</td>
+                        </tr>
+                        <tr>
+                            <td>Beer</td>
+                            <td>Lohr</td>
+                            <td>Delivery</td>
+                            <td>Thursday</td>
+                            <td>Regular schedule</td>
+                        </tr>
+                        <tr>
+                            <td>Craft Beer</td>
+                            <td>Craft Republic</td>
+                            <td>TBD</td>
+                            <td>No process set</td>
+                            <td>New vendor relationship</td>
+                        </tr>
+                        <tr>
+                            <td>Liquor</td>
+                            <td>Southern Glazer's</td>
+                            <td>Delivery (new)</td>
+                            <td>Thu/Fri</td>
+                            <td>Previously pickup, now delivery</td>
+                        </tr>
+                        <tr>
+                            <td>Miscellaneous</td>
+                            <td>Amazon</td>
+                            <td>Delivery to Erin</td>
+                            <td>As needed</td>
+                            <td>Napkins, random items</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="issue-alert">
+                <h4>🚨 Current Issues</h4>
+                <p><strong>Busy Season Challenge:</strong> Storage space becomes critical during peak periods</p>
+            </div>
+        </div>
+
+        <!-- Improv Shop Content -->
+        <div id="improv" class="location-content">
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <h3>Key Personnel</h3>
+                    <p><strong>Primary Manager:</strong> <span class="person-tag">Max</span></p>
+                    <p><strong>Backup Orders:</strong> <span class="person-tag">Andy</span></p>
+                    <p><strong>Restaurant Depot:</strong> Through Melanie</p>
+                </div>
+                <div class="overview-card">
+                    <h3>Delivery Schedule</h3>
+                    <p><strong>Monday:</strong> Restaurant Depot</p>
+                    <p><strong>Tuesday:</strong> Craft Republic, LOHR, Southern Glazers</p>
+                    <p><strong>Wednesday:</strong> Pepsi (bi-monthly)</p>
+                    <p><strong>Thursday:</strong> Breakthru, CINTAS</p>
+                    <p><strong>Friday:</strong> Keg 1 (1-2x/month)</p>
+                </div>
+            </div>
+
+            <div class="vendor-section">
+                <h3>Vendor & Inventory Details</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendor</th>
+                            <th>Products</th>
+                            <th>Delivery Day</th>
+                            <th>Frequency</th>
+                            <th>Receiver</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Restaurant Depot</td>
+                            <td>Citrus, mixers, paper goods, cleaners, coffee</td>
+                            <td>Monday</td>
+                            <td>Regular</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>Craft Republic</td>
+                            <td>Kegs, craft beer, THC seltzers</td>
+                            <td>Tuesday</td>
+                            <td>Regular</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>LOHR</td>
+                            <td>Domestic beer, Fitz's sodas</td>
+                            <td>Tuesday</td>
+                            <td>Regular</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>Southern Glazers</td>
+                            <td>Liquor</td>
+                            <td>Tuesday</td>
+                            <td>Regular</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>Breakthru Beverage</td>
+                            <td>Beer, liquor, wine</td>
+                            <td>Thursday</td>
+                            <td>Regular</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>Keg 1</td>
+                            <td>Domestic beer, kegs</td>
+                            <td>Friday</td>
+                            <td>1-2x/month</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>Pepsi</td>
+                            <td>Sodas</td>
+                            <td>Wednesday</td>
+                            <td>Bi-monthly</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                        <tr>
+                            <td>CINTAS</td>
+                            <td>Cleaning supplies, linens</td>
+                            <td>Thursday</td>
+                            <td>Regular</td>
+                            <td><span class="person-tag">Max</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="delivery-schedule">
+                <h4>📅 Weekly Delivery Pattern</h4>
+                <p><strong>Monday:</strong> Restaurant Depot → <strong>Tuesday:</strong> Craft Republic, LOHR, Southern Glazers → <strong>Wednesday:</strong> Pepsi (every other month) → <strong>Thursday:</strong> Breakthru, CINTAS → <strong>Friday:</strong> Keg 1 (1-2x monthly)</p>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <h3>📊 Export to Google Sheets</h3>
+            <p>To create a working Google Sheets version of this tracker:</p>
+            <ol>
+                <li>Create a new Google Sheet</li>
+                <li>Create separate tabs for each location (DDI, Drive-Up, Epiphany, Improv Shop)</li>
+                <li>Add a "Master Schedule" tab showing all deliveries by day</li>
+                <li>Include columns for: Item, Vendor, Orderer, Receiver, Delivery Day, Current Stock, Reorder Point, Last Order Date, Next Order Due</li>
+                <li>Set up data validation for dropdown menus (personnel, vendors, etc.)</li>
+                <li>Create conditional formatting for low stock alerts</li>
+                <li>Add a dashboard tab with charts showing vendor distribution, delivery schedule, and key metrics</li>
+            </ol>
+            <p><strong>Recommendation:</strong> Start with the DDI tab as a template since it has the most detailed process documentation.</p>
+        </div>
+    </div>
+
+    <script>
+        function showLocation(location) {
+            // Hide all content
+            const contents = document.querySelectorAll('.location-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected content
+            document.getElementById(location).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
